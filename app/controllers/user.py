@@ -41,12 +41,6 @@ class UserController(Controller):
         users_repo: UserRepository,
     ) -> User:
         """Create a new user."""
-        # Validar que el año esté entre 1000 y el año actual
-        if not (1000 <= data.as_builtins()["published_year"] <= 2024):
-            raise HTTPException(
-                detail="El año de publicación debe estar entre 1000 y 2024",
-                status_code=400,
-            )
 
         return users_repo.add(data.create_instance())
 

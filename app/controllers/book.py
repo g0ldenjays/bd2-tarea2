@@ -5,6 +5,7 @@ from advanced_alchemy.filters import LimitOffset
 from litestar import Controller, delete, get, patch, post
 from litestar.di import Provide
 from litestar.dto import DTOData
+from litestar.exceptions import HTTPException
 from litestar.params import Parameter
 
 from app.controllers import duplicate_error_handler, not_found_error_handler
@@ -41,6 +42,12 @@ class BookController(Controller):
         data: DTOData[Book],
         books_repo: BookRepository,
     ) -> Book:
+        # Validar que el año esté entre 1000 y el año actual
+        if not (1000 <= data.as_builtins()["published_year"] <= 2024):
+            raise HTTPException(
+                detail="El año de publicación debe estar entre 1000 y 2024",
+                status_code=400,
+            )
         """Create a new book."""
         return books_repo.add(data.create_instance())
 
@@ -79,7 +86,6 @@ class BookController(Controller):
     ) -> Sequence[Book]:
         """Filter books by published year."""
         return books_repo.list(Book.published_year.between(year_from, to))
-
 
     @get("/recent")
     async def get_recent_books(

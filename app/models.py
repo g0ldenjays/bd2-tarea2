@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from datetime import date, datetime
 
 from advanced_alchemy.base import BigIntAuditBase
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class User(BigIntAuditBase):
@@ -12,6 +14,8 @@ class User(BigIntAuditBase):
     username: Mapped[str] = mapped_column(unique=True)
     fullname: Mapped[str]
     password: Mapped[str]
+
+    loans: Mapped[list["Loan"]] = relationship(back_populates="user")
 
 
 class Book(BigIntAuditBase):
@@ -24,6 +28,22 @@ class Book(BigIntAuditBase):
     isbn: Mapped[str] = mapped_column(unique=True)
     pages: Mapped[int]
     published_year: Mapped[int]
+
+    loans: Mapped[list["Loan"]] = relationship(back_populates="book")
+
+
+class Loan(BigIntAuditBase):
+    """Loan model with audit fields"""
+
+    __tablename__ = "loans"
+
+    loan_dt: Mapped[date] = mapped_column(default=datetime.today)
+    return_dt: Mapped[date | None]
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id"))
+
+    user: Mapped[User] = relationship(back_populates="loans")
+    book: Mapped[Book] = relationship(back_populates="loans")
 
 
 @dataclass
