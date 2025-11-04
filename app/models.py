@@ -40,5 +40,5 @@ class BookStats:
 
     total_books: int
     average_pages: float
-    oldest_publication_year: int
-    newest_publication_year: int
+    oldest_publication_year: int | None
+    newest_publication_year: int | None
