@@ -1,13 +1,21 @@
 from advanced_alchemy.repository import SQLAlchemySyncRepository
+from litestar.dto import DTOData
 from sqlalchemy.orm import Session
 
 from app.models import User
+from app.security import password_hasher
 
 
 class UserRepository(SQLAlchemySyncRepository[User]):
     """Repository for user database operations."""
 
     model_type = User
+
+    def add_with_hashed_password(self, data: DTOData[User]):
+        data_dict = data.as_builtins()
+        data_dict["password"] = password_hasher.hash(data_dict["password"])
+
+        return self.add(User(**data_dict))
 
 
 async def provide_user_repo(db_session: Session) -> UserRepository:

@@ -6,7 +6,7 @@ from app.models import User
 class UserReadDTO(SQLAlchemyDTO[User]):
     """DTO for reading user data without password."""
 
-    config = SQLAlchemyDTOConfig(exclude={"password"})
+    config = SQLAlchemyDTOConfig(exclude={"admin"})
 
 
 class UserCreateDTO(SQLAlchemyDTO[User]):

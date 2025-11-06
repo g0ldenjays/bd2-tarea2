@@ -2,6 +2,7 @@ from litestar.app import Litestar
 from litestar.openapi import OpenAPIConfig
 from litestar.openapi.plugins import ScalarRenderPlugin, SwaggerRenderPlugin
 
+from app.controllers.auth import AuthController
 from app.controllers.book import BookController
 from app.controllers.loan import LoanController
 from app.controllers.user import UserController
@@ -17,7 +18,12 @@ openapi_config = OpenAPIConfig(
 )
 
 app = Litestar(
-    route_handlers=[UserController, BookController, LoanController],
+    route_handlers=[
+        UserController,
+        BookController,
+        LoanController,
+        AuthController,
+    ],
     openapi_config=openapi_config,
     debug=True,
     plugins=[sqlalchemy_plugin],

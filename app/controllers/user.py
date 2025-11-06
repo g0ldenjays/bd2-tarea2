@@ -42,7 +42,7 @@ class UserController(Controller):
     ) -> User:
         """Create a new user."""
 
-        return users_repo.add(data.create_instance())
+        return users_repo.add_with_hashed_password(data)
 
     @patch("/{id:int}", dto=UserUpdateDTO)
     async def update_user(

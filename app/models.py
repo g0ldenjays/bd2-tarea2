@@ -62,3 +62,9 @@ class BookStats:
     average_pages: float
     oldest_publication_year: int | None
     newest_publication_year: int | None
+
+
+@dataclass
+class Login:
+    username: str
+    password: str
