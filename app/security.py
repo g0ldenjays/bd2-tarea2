@@ -7,7 +7,7 @@ from app.models import User
 from app.repositories.user import UserRepository
 
 
-async def retrieve_user_handler(token: Token, connection: ASGIConnection) -> User | None:
+async def retrieve_user_handler(token: Token, _: ASGIConnection) -> User | None:
     from app.db import sqlalchemy_config
 
     with sqlalchemy_config.get_session() as session:
