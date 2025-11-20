@@ -2,9 +2,8 @@
 
 from advanced_alchemy.extensions.litestar import SQLAlchemyPlugin, SQLAlchemySyncConfig
 
-sqlalchemy_config = SQLAlchemySyncConfig(
-    connection_string="sqlite:///db.sqlite3",
-    create_all=True,
-)
+from app.config import settings
+
+sqlalchemy_config = SQLAlchemySyncConfig(connection_string=settings.database_url)
 
 sqlalchemy_plugin = SQLAlchemyPlugin(config=sqlalchemy_config)
