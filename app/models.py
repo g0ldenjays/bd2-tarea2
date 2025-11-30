@@ -26,6 +26,8 @@ class User(BigIntAuditBase):
 
     loans: Mapped[list["Loan"]] = relationship(back_populates="user")
 
+    reviews: Mapped[list["Review"]] = relationship(back_populates="user")
+
 
 class Book(BigIntAuditBase):
     """Book model with audit fields."""
@@ -44,6 +46,9 @@ class Book(BigIntAuditBase):
         secondary=book_categories,
         back_populates="books",
     )
+
+    reviews: Mapped[list["Review"]] = relationship(back_populates="book")
+
 
 
 class Loan(BigIntAuditBase):
@@ -64,7 +69,6 @@ class Category(BigIntAuditBase):
 
     __tablename__ = "categories"
 
-    # Hereda id, created_at, updated_at desde BigIntAuditBase
     name: Mapped[str] = mapped_column(unique=True)
     description: Mapped[str | None] = mapped_column(nullable=True)
 
@@ -72,6 +76,22 @@ class Category(BigIntAuditBase):
         secondary=book_categories,
         back_populates="categories",
     )
+
+class Review(BigIntAuditBase):
+    """Review model with audit fields."""
+
+    __tablename__ = "reviews"
+
+    rating: Mapped[int]
+    comment: Mapped[str]
+    review_date: Mapped[date] = mapped_column(default=date.today)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id"))
+
+    user: Mapped["User"] = relationship(back_populates="reviews")
+    book: Mapped["Book"] = relationship(back_populates="reviews")
+
 
 
 @dataclass
