@@ -1,6 +1,7 @@
 """Controller for Book endpoints."""
 
 from typing import Annotated, Sequence
+from datetime import datetime
 
 from advanced_alchemy.exceptions import DuplicateKeyError, NotFoundError
 from advanced_alchemy.filters import LimitOffset
@@ -39,30 +40,69 @@ class BookController(Controller):
         return books_repo.get(id)
 
     @post("/", dto=BookCreateDTO)
-    async def create_book(
-        self,
-        data: DTOData[Book],
-        books_repo: BookRepository,
-    ) -> Book:
+    async def create_book( self, data: DTOData[Book], books_repo: BookRepository) -> Book:
         """Create a new book."""
-        # Validar que el año esté entre 1000 y el año actual
-        if not (1000 <= data.as_builtins()["published_year"] <= 2024):
+        payload = data.as_builtins()
+
+        # año de publicación válido
+        current_year = datetime.now().year
+        published_year = payload.get("published_year")
+        if published_year is None or not (1000 <= published_year <= current_year):
             raise HTTPException(
-                detail="El año de publicación debe estar entre 1000 y 2024",
+                detail=f"El año de publicación debe estar entre 1000 y {current_year}",
                 status_code=400,
             )
+
+        # stock > 0
+        stock = payload.get("stock", 1)
+        if stock is None or stock <= 0:
+            raise HTTPException(
+                detail="El stock debe ser mayor que 0",
+                status_code=400,
+            )
+
+        # idioma
+        language = payload.get("language")
+        if not isinstance(language, str) or len(language) != 2:
+            raise HTTPException(
+                detail="El idioma debe ser un código de 2 letras (por ejemplo: 'es', 'en', 'fr').",
+                status_code=400,
+            )
+
         return books_repo.add(data.create_instance())
 
     @patch("/{id:int}", dto=BookUpdateDTO)
-    async def update_book(
-        self,
-        id: int,
-        data: DTOData[Book],
-        books_repo: BookRepository,
-    ) -> Book:
+    async def update_book( self, id: int, data: DTOData[Book], books_repo: BookRepository) -> Book:
         """Update a book by ID."""
-        book, _ = books_repo.get_and_update(match_fields="id", id=id, **data.as_builtins())
+        payload = data.as_builtins()
+        current_year = datetime.now().year
 
+        # año de publicación válido
+        if "published_year" in payload and payload["published_year"] is not None:
+            if not (1000 <= payload["published_year"] <= current_year):
+                raise HTTPException(
+                    detail=f"El año de publicación debe estar entre 1000 y {current_year}",
+                    status_code=400,
+                )
+
+        # stock >= 0
+        if "stock" in payload and payload["stock"] is not None:
+            if payload["stock"] < 0:
+                raise HTTPException(
+                    detail="El stock no puede ser negativo",
+                    status_code=400,
+                )
+
+        # idioma
+        if "language" in payload and payload["language"] is not None:
+            language = payload["language"]
+            if not isinstance(language, str) or len(language) != 2:
+                raise HTTPException(
+                    detail="El idioma debe ser un código de 2 letras (por ejemplo: 'es', 'en', 'fr').",
+                    status_code=400,
+                )
+
+        book, _ = books_repo.get_and_update(match_fields="id", id=id, **payload)
         return book
 
     @delete("/{id:int}")

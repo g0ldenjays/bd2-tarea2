@@ -23,12 +23,17 @@ class User(BigIntAuditBase):
     username: Mapped[str] = mapped_column(unique=True)
     fullname: Mapped[str]
     password: Mapped[str]
+    
+    email: Mapped[str | None] = mapped_column(unique=True, nullable=True)
+    phone: Mapped[str | None] = mapped_column(nullable=True)
+    address: Mapped[str | None] = mapped_column(nullable=True)
+    is_active: Mapped[bool] = mapped_column(default=True)
 
     loans: Mapped[list["Loan"]] = relationship(back_populates="user")
 
     reviews: Mapped[list["Review"]] = relationship(back_populates="user")
 
-
+    
 class Book(BigIntAuditBase):
     """Book model with audit fields."""
 
@@ -40,6 +45,11 @@ class Book(BigIntAuditBase):
     pages: Mapped[int]
     published_year: Mapped[int]
 
+    stock: Mapped[int] = mapped_column(default=1)
+    description: Mapped[str | None] = mapped_column(nullable=True)
+    language: Mapped[str]
+    publisher: Mapped[str | None] = mapped_column(nullable=True)
+
     loans: Mapped[list["Loan"]] = relationship(back_populates="book")
 
     categories: Mapped[list["Category"]] = relationship(
@@ -48,6 +58,7 @@ class Book(BigIntAuditBase):
     )
 
     reviews: Mapped[list["Review"]] = relationship(back_populates="book")
+
 
 
 
