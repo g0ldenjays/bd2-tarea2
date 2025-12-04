@@ -130,11 +130,7 @@ class BookController(Controller):
         return books_repo.list(Book.published_year.between(year_from, to))
 
     @get("/recent")
-    async def get_recent_books(
-        self,
-        limit: Annotated[int, Parameter(query="limit", default=10, ge=1, le=50)],
-        books_repo: BookRepository,
-    ) -> Sequence[Book]:
+    async def get_recent_books( self, limit: Annotated[int, Parameter(query="limit", default=10, ge=1, le=50)], books_repo: BookRepository) -> Sequence[Book]:
         """Get most recent books."""
         return books_repo.list(
             LimitOffset(offset=0, limit=limit),
@@ -142,10 +138,7 @@ class BookController(Controller):
         )
 
     @get("/stats")
-    async def get_book_stats(
-        self,
-        books_repo: BookRepository,
-    ) -> BookStats:
+    async def get_book_stats(self,books_repo: BookRepository) -> BookStats:
         """Get statistics about books."""
         total_books = books_repo.count()
         if total_books == 0:
@@ -168,3 +161,32 @@ class BookController(Controller):
             oldest_publication_year=oldest_year,
             newest_publication_year=newest_year,
         )
+
+    @get("/available")
+    async def get_available_books(self,books_repo: BookRepository) -> Sequence[Book]:
+        """Get books with stock > 0."""
+        return books_repo.get_available_books()
+
+    @get("/by-category/{category_id:int}")
+    async def get_books_by_category(self,category_id: int,books_repo: BookRepository) -> Sequence[Book]:
+        """Get books that belong to a given category."""
+        return books_repo.find_by_category(category_id)
+
+    @get("/most-reviewed")
+    async def get_most_reviewed_books(self,limit: Annotated[int, Parameter(query="limit", ge=1, le=50, default=10)],books_repo: BookRepository) -> Sequence[Book]:
+        """Get books ordered by number of reviews (desc)."""
+        return books_repo.get_most_reviewed_books(limit=limit)
+
+    @patch("/{id:int}/stock")
+    async def update_book_stock(self,id: int,quantity: Annotated[int, Parameter(query="quantity")],books_repo: BookRepository) -> Book:
+        """Update stock for a book (quantity can be positive or negative)."""
+        try:
+            return books_repo.update_stock(book_id=id, quantity=quantity)
+        except ValueError as exc:
+            # stock no puede quedar negativo
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    @get("/search/author")
+    async def search_books_by_author(self,author_name: Annotated[str, Parameter(query="author_name")],books_repo: BookRepository) -> Sequence[Book]:
+        """Search books by author name (partial match)."""
+        return books_repo.search_by_author(author_name)
