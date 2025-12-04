@@ -27,3 +27,5 @@ class LoanUpdateDTO(SQLAlchemyDTO[Loan]):
         include={"status"},
         partial=True,
     )
+
+

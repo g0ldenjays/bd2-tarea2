@@ -1,55 +1,52 @@
-# API con Litestar y PostgreSQL
+## Iván Gallardo, 4 de Diciembre 2025
+### Descripción general del trabajo
 
-API REST para gestión de biblioteca que permite administrar usuarios, libros y préstamos. Incluye autenticación JWT y documentación interactiva (Swagger/Scalar).
+Este proyecto implementa una API REST para la gestión de una biblioteca utilizando **Litestar**, **SQLAlchemy**, **Alembic** y **PostgreSQL**.
+Además de la funcionalidad base incluida en el repositorio original, se agregaron:
 
-## Requisitos
+* Modelo `Category` y relación **muchos a muchos** entre `Book` y `Category` (`book_categories`).
+* Ampliación del modelo `Book` con campos adicionales: `stock`, `description`, `publisher`, `language`, entre otros.
+* Modelo `Review` para registrar reseñas de usuarios sobre libros (con rating y comentario).
+* Extensión del modelo `User` con información de contacto (`email`, `phone`, `address`) y el flag `is_active`.
+* Extensión del modelo `Loan` con campos `due_date`, `fine_amount` y `status` basado en el enum `LoanStatus` (`ACTIVE`, `RETURNED`, `OVERDUE`).
+* Nuevos métodos en los repositorios (`BookRepository`, `LoanRepository`) para búsquedas avanzadas, actualización de stock, préstamos vencidos, cálculo de multas, historial de usuario, etc.
+* Endpoints adicionales en los controladores para exponer estas operaciones.
+* Base de datos inicial con datos de ejemplo (categorías, libros, usuarios, préstamos y reseñas) exportada en el archivo **`initial_data.sql`**, siguiendo el formato de ISBN solicitado (`ISBN-BD2-2025-XXXX`).
 
-- [uv](https://github.com/astral-sh/uv)
-- PostgreSQL
+Las contraseñas de los usuarios se almacenan utilizando **hash Argon2**, y se implementan validaciones en los DTOs y controladores (por ejemplo, año de publicación en un rango válido, stock no negativo, uso de `due_date` calculado automáticamente, etc.).
 
-## Inicio rápido
+---
 
-```bash
-uv sync                      # Instala las dependencias
-cp .env.example .env         # Configura las variables de entorno (ajusta según sea necesario)
-uv run alembic upgrade head  # Aplica las migraciones de la base de datos
-uv run litestar --reload     # Inicia el servidor de desarrollo
-# Accede a http://localhost:8000/schema para ver la documentación de la API
-```
+### Decisiones de diseño
 
-## Variables de entorno
+* Se utilizó el patrón **Repository** para encapsular la lógica de acceso a datos y mantener los controladores lo más delgados posible.
+* Los **DTOs** de lectura y escritura se configuraron para ocultar campos sensibles (por ejemplo, `password`) y para excluir campos calculados o de auditoría (`created_at`, `updated_at`, `due_date`, `fine_amount`, etc.) en los endpoints donde no corresponde que el cliente los envíe.
+* Para los préstamos (`Loan`), el campo `due_date` se calcula automáticamente a partir de `loan_dt` (por defecto, 14 días después), y los estados se gestionan mediante el enum `LoanStatus`, lo que simplifica la lógica de préstamos activos, devueltos y vencidos.
+* El archivo `initial_data.sql` se generó con `pg_dump -Ox` para que el esquema y los datos iniciales sean fácilmente restaurables sin atar el dump a un usuario u ownership específico.
 
-Crea un archivo `.env` basado en `.env.example`:
+---
 
-- `DEBUG`: Modo debug (True/False)
-- `JWT_SECRET_KEY`: Clave secreta para tokens JWT
-- `DATABASE_URL`: URL de conexión a PostgreSQL (formato: `postgresql+psycopg://usuario:contraseña@host:puerto/nombre_bd`). Recuerda crear la base de datos antes de ejecutar la aplicación con `createdb nombre_bd`.
+### Uso de herramientas de IA
 
-## Estructura del proyecto
+Durante el desarrollo de este proyecto se utilizaron herramientas de inteligencia artificial como apoyo en:
 
-```
-app/
-├── controllers/     # Endpoints de la API (auth, book, loan, user)
-├── dtos/            # Data Transfer Objects
-├── repositories/    # Capa de acceso a datos
-├── models.py        # Modelos SQLAlchemy (User, Book, Loan)
-├── db.py            # Configuración de base de datos
-├── config.py        # Configuración de la aplicación
-└── security.py      # Autenticación y seguridad
-migrations/          # Migraciones de Alembic
-```
+* La **resolución de problemas de configuración** (por ejemplo, errores de migraciones con Alembic y ajustes en la URL de conexión a PostgreSQL).
+* La **validación de reglas de negocio**, como la validación de correos electrónicos y restricciones sobre los datos de entrada en los DTOs.
+* La investigación y corrección del error relacionado con el tipo `loan_status_enum` en una migración de Alembic, ajustando la creación explícita del tipo enum antes de agregar la columna correspondiente en la tabla `loans`.
 
-## Crear una copia privada de este repositorio
+Las herramientas de IA se emplearon como asistencia para depurar, refinar el diseño y revisar el código, pero las decisiones finales de implementación, estructura de modelos y endpoints fueron tomadas manualmente, verificando el comportamiento de la API mediante pruebas en el entorno local.
 
-Para crear una copia privada de este repositorio en tu propia cuenta de GitHub, conservando el historial de commits, sigue estos pasos:
+---
 
-- Primero, crea un repositorio privado en tu cuenta de GitHub. Guarda la URL del nuevo repositorio.
-- Luego, ejecuta los siguientes comandos en tu terminal, reemplazando `<URL_DE_TU_REPOSITORIO_PRIVADO>` con la URL de tu nuevo repositorio privado:
+## Tabla de cumplimientos
 
-  ```bash
-  git clone https://github.com/dialvarezs/learning-vue-bd2-2025 # Clona el repositorio
-  cd learning-vue-bd2-2025
-  git remote remove origin                                      # Elimina el origen remoto existente
-  git remote add origin <URL_DE_TU_REPOSITORIO_PRIVADO>         # Agrega el nuevo origen remoto
-  git push -u origin main                                       # Sube la rama principal al
-  ```
+| Requerimiento                                      | Estado    | Observación |
+|----------------------------------------------------|-----------|-------------|
+| 1. Modelo Category + relación many-to-many con Book| Cumplido  | -           |
+| 2. Modelo Review y CRUD de reseñas                 | Cumplido  | -           |
+| 3. Campos extra en Book (stock, descripción, etc.) | Cumplido  | -           |
+| 4. Campos extra en User (email, contacto, is_active)| Cumplido | -           |
+| 5. Campos extra en Loan + LoanStatus               | Cumplido  | -           |
+| 6. Métodos avanzados en BookRepository + endpoints | Cumplido  | -           |
+| 7. Métodos avanzados en LoanRepository + endpoints | Cumplido  | -           |
+| 8. Base de datos inicial + initial_data.sql        | Cumplido  | -           |
