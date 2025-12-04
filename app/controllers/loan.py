@@ -1,6 +1,7 @@
 """Controller for Loan endpoints."""
 
 from typing import Sequence
+from datetime import date, timedelta
 
 from advanced_alchemy.exceptions import DuplicateKeyError, NotFoundError
 from litestar import Controller, delete, get, patch, post
@@ -9,7 +10,7 @@ from litestar.dto import DTOData
 
 from app.controllers import duplicate_error_handler, not_found_error_handler
 from app.dtos.loan import LoanCreateDTO, LoanReadDTO, LoanUpdateDTO
-from app.models import Loan
+from app.models import Loan, LoanStatus
 from app.repositories.loan import LoanRepository, provide_loan_repo
 
 
@@ -36,25 +37,36 @@ class LoanController(Controller):
         return loans_repo.get(id)
 
     @post("/", dto=LoanCreateDTO)
-    async def create_loan(
-        self,
-        data: DTOData[Loan],
-        loans_repo: LoanRepository,
-    ) -> Loan:
-        """Create a new loan."""
+    async def create_loan(self,data: DTOData[Loan],loans_repo: LoanRepository) -> Loan:
+        """Create a new loan.
 
-        return loans_repo.add(data.create_instance())
+        - Calcula due_date como loan_dt + 14 días.
+        - Deja fine_amount en None.
+        - Deja status en ACTIVE.
+        """
+        loan = data.create_instance()
+
+        # Si no vino loan_dt, usamos la fecha de hoy
+        if loan.loan_dt is None:
+            loan.loan_dt = date.today()
+
+        # due_date = 14 días después de loan_dt
+        loan.due_date = loan.loan_dt + timedelta(days=14)
+
+        # Por claridad hacemos explícitos estos defaults
+        loan.status = LoanStatus.ACTIVE
+        loan.fine_amount = None
+
+        return loans_repo.add(loan)
 
     @patch("/{id:int}", dto=LoanUpdateDTO)
-    async def update_loan(
-        self,
-        id: int,
-        data: DTOData[Loan],
-        loans_repo: LoanRepository,
-    ) -> Loan:
-        """Update a loan by ID."""
-        loan, _ = loans_repo.get_and_update(match_fields="id", id=id, **data.as_builtins())
+    async def update_loan(self,id: int,data: DTOData[Loan],loans_repo: LoanRepository) -> Loan:
+        """Update loan status by ID.
 
+        El DTO solo permite actualizar 'status', así que no se tocan otros campos.
+        """
+        payload = data.as_builtins()
+        loan, _ = loans_repo.get_and_update(match_fields="id", id=id, **payload)
         return loan
 
     @delete("/{id:int}")

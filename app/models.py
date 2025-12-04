@@ -2,10 +2,13 @@
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
+from enum import Enum
 
 from advanced_alchemy.base import BigIntAuditBase
-from sqlalchemy import ForeignKey, Column, Table
+from sqlalchemy import ForeignKey, Column, Table, Enum as SAEnum, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 
 # Tabla intermedia para la relación many-to-many entre books y categories
 book_categories = Table(
@@ -59,8 +62,12 @@ class Book(BigIntAuditBase):
 
     reviews: Mapped[list["Review"]] = relationship(back_populates="book")
 
+class LoanStatus(str, Enum):
+    """Loan status enum."""
 
-
+    ACTIVE = "ACTIVE"
+    RETURNED = "RETURNED"
+    OVERDUE = "OVERDUE"
 
 class Loan(BigIntAuditBase):
     """Loan model with audit fields."""
@@ -69,6 +76,15 @@ class Loan(BigIntAuditBase):
 
     loan_dt: Mapped[date] = mapped_column(default=datetime.today)
     return_dt: Mapped[date | None]
+
+    due_date: Mapped[date]
+    fine_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    status: Mapped[LoanStatus] = mapped_column(
+        SAEnum(LoanStatus, name="loan_status_enum"),
+        default=LoanStatus.ACTIVE,
+        server_default=LoanStatus.ACTIVE.value,
+    )
+
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     book_id: Mapped[int] = mapped_column(ForeignKey("books.id"))
 
