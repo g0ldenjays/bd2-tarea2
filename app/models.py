@@ -75,7 +75,7 @@ class Loan(BigIntAuditBase):
     __tablename__ = "loans"
 
     loan_dt: Mapped[date] = mapped_column(default=datetime.today)
-    return_dt: Mapped[date | None]
+    return_dt: Mapped[date | None] = mapped_column(nullable=True)
 
     due_date: Mapped[date]
     fine_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)

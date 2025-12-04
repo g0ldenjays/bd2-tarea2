@@ -73,3 +73,29 @@ class LoanController(Controller):
     async def delete_loan(self, id: int, loans_repo: LoanRepository) -> None:
         """Delete a loan by ID."""
         loans_repo.delete(id)
+
+    @get("/active")
+    async def get_active_loans(self,loans_repo: LoanRepository) -> Sequence[Loan]:
+        """Get all ACTIVE loans."""
+        return loans_repo.get_active_loans()
+
+    @get("/overdue")
+    async def get_overdue_loans(self,loans_repo: LoanRepository) -> Sequence[Loan]:
+        """Get all overdue loans, marking ACTIVE + vencidos como OVERDUE."""
+        return loans_repo.get_overdue_loans()
+
+    @get("/{id:int}/fine")
+    async def get_loan_fine(self,id: int,loans_repo: LoanRepository) -> dict:
+        """Calculate fine for a loan."""
+        fine = loans_repo.calculate_fine(id)
+        return {"loan_id": id, "fine": str(fine)}
+
+    @post("/{id:int}/return")
+    async def return_book(self,id: int,loans_repo: LoanRepository) -> Loan:
+        """Process a book return for a given loan."""
+        return loans_repo.return_book(id)
+
+    @get("/user/{user_id:int}")
+    async def get_user_loan_history(self,user_id: int,loans_repo: LoanRepository) -> Sequence[Loan]:
+        """Get full loan history for a user, ordered by loan date."""
+        return loans_repo.get_user_loan_history(user_id)
